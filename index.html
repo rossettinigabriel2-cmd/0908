@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Guardiã da Pequena Chama</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box !important;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #050302;
+      font-family: 'Cormorant Garamond', 'IM Fell English', serif;
+      color: #000000;
+    }
+
+    .ambient-lighting {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+      background: radial-gradient(
+        circle at 20% 20%,
+        rgba(255, 170, 70, 0.15) 0%,
+        rgba(20, 10, 5, 0.4) 50%,
+        rgba(0, 0, 0, 0.85) 100%
+      );
+      mix-blend-mode: color-dodge;
+    }
+
+    .scene {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ==========================================================================
+       CENA 1: CAPA
+       ========================================================================== */
+    .table-background {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url('assets/table.png') center/cover no-repeat;
+      filter: brightness(0.85) contrast(1.1);
+    }
+
+    #scene-desk { perspective: 1200px; }
+
+    .book-cover-container {
+      position: relative;
+      width: min(420px, 38vw);
+      max-height: 82vh;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease;
+      filter: drop-shadow(15px 25px 25px rgba(0, 0, 0, 0.85));
+    }
+
+    .cover-image {
+      width: 100%; height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .book-cover-container.opening {
+      transition: transform 1.2s ease, opacity 1.2s ease;
+      transform: rotateY(-110deg) scale(1.05) translateZ(30px) !important;
+      opacity: 0;
+    }
+
+    /* ==========================================================================
+       CENA 2: LIVRO ABERTO
+       ========================================================================== */
+    .open-book-wrapper {
+      position: relative;
+      width: min(1100px, 88vw) !important;
+      aspect-ratio: 1402 / 1122 !important;
+      max-height: 82vh !important;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .book-open-bg {
+      position: absolute;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      pointer-events: none;
+      filter: drop-shadow(0 20px 30px rgba(0,0,0,0.9));
+    }
+
+    .book-viewport {
+      position: absolute !important;
+      width: 70% !important;
+      height: 76% !important;
+      top: 11.5% !important;
+      left: 15% !important;
+      display: flex !important;
+    }
+
+    .page-side {
+      position: absolute !important;
+      width: 50% !important;
+      height: 100% !important;
+      top: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .page-left { left: 0 !important; }
+    .page-right { right: 0 !important; }
+
+    .page-inner {
+      position: relative !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: transparent !important;
+    }
+
+    .page-border-frame {
+      position: absolute !important;
+      top: 1% !important; 
+      bottom: 1% !important;
+      width: 92% !important; 
+      height: 98% !important;
+      background: url('assets/page-border.png') center/100% 100% no-repeat !important;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.85;
+      mix-blend-mode: multiply;
+    }
+
+    .page-left .page-border-frame { right: 4% !important; }
+    .page-right .page-border-frame { left: 4% !important; }
+
+    /* ==========================================================================
+       CAIXAS DE EDIÇÃO INDEPENDENTES
+       ========================================================================== */
+    .box-pagina-esquerda {
+      position: absolute !important;
+      top: 8% !important;       /* SUBIR / DESCER TEXTO NA ESQUERDA */
+      bottom: 6% !important;
+      left: 40% !important;     /* AFASTAR DA BORDA EXTERNA ESQUERDA */
+      right: 14% !important;    /* AFASTAR DA LOMBADA (MEIO DO LIVRO) */
+      z-index: 20 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      overflow: hidden !important;
+      color: #000000 !important;
+    }
+
+    .box-pagina-direita {
+      position: absolute !important;
+      top: 4% !important;       /* SUBIR / DESCER TEXTO NA DIREITA */
+      bottom: 6% !important;
+      left: 14% !important;     /* AFASTAR DA LOMBADA (MEIO DO LIVRO) */
+      right: 40% !important;    /* AFASTAR DA BORDA EXTERNA DIREITA */
+      z-index: 20 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      overflow: hidden !important;
+      color: #000000 !important;
+    }
+
+    /* ==========================================================================
+       AJUSTE DAS FOTOS
+       ========================================================================== */
+    .full-page-illustration {
+      position: absolute !important;
+      top: 2% !important;
+      bottom: 2% !important;
+      width: 90% !important;
+      height: 96% !important;
+      object-fit: cover !important;
+      z-index: 15 !important;
+      mix-blend-mode: multiply !important;
+      border-radius: 3px !important;
+      filter: contrast(1.1) sepia(0.08) !important;
+    }
+
+    .page-left .full-page-illustration { right: 5% !important; left: auto !important; }
+    .page-right .full-page-illustration { left: 5% !important; right: auto !important; }
+
+    /* ==========================================================================
+       TIPOGRAFIA
+       ========================================================================== */
+    h1.book-title {
+      font-size: clamp(1.2rem, 1.6vw, 1.9rem) !important;
+      text-align: center !important;
+      font-weight: 700 !important;
+      letter-spacing: 2px !important;
+      color: #000000 !important;
+      margin-top: 5% !important;
+      margin-bottom: 4% !important;
+      text-transform: uppercase !important;
+    }
+
+    h2.chapter-title {
+      font-size: clamp(0.95rem, 1.25vw, 1.45rem) !important;
+      text-align: center !important;
+      font-weight: 700 !important;
+      margin-bottom: 5% !important;
+      color: #000000 !important;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.35) !important;
+      padding-bottom: 4px !important;
+    }
+
+    p.subtitle {
+      font-size: clamp(0.85rem, 1vw, 1.1rem) !important;
+      text-align: center !important;
+      font-style: italic !important;
+      line-height: 1.4 !important;
+      margin-bottom: 6% !important;
+      font-weight: 700 !important;
+    }
+
+    p.dedication {
+      font-size: clamp(0.8rem, 0.9vw, 1rem) !important;
+      text-align: center !important;
+      margin-top: auto !important;
+      font-style: italic !important;
+      font-weight: 700 !important;
+    }
+
+    p.year {
+      font-size: clamp(0.7rem, 0.8vw, 0.9rem) !important;
+      text-align: center !important;
+      margin-top: 4px !important;
+      letter-spacing: 3px !important;
+      font-weight: 700 !important;
+    }
+
+    .text-paragraph {
+      font-size: clamp(0.76rem, 0.86vw, 0.95rem) !important;
+      line-height: 1.45 !important;
+      text-align: justify !important;
+      margin-bottom: 0.5em !important;
+      text-indent: 1em !important;
+      font-weight: 700 !important;
+      color: #000000 !important;
+    }
+
+    .drop-cap {
+      float: left !important;
+      font-size: clamp(2.2rem, 2.7vw, 3.1rem) !important;
+      line-height: 0.8 !important;
+      padding-top: 2px !important;
+      padding-right: 5px !important;
+      font-weight: 700 !important;
+      font-family: 'IM Fell English', serif !important;
+      color: #000000 !important;
+    }
+
+    blockquote.scroll-quote {
+      font-style: italic !important;
+      margin: 0.5em 1% !important;
+      padding: 0.4em 0.6em !important;
+      border-left: 3px solid #000000 !important;
+      background: rgba(0, 0, 0, 0.05) !important;
+      font-size: 0.85em !important;
+      line-height: 1.35 !important;
+      font-weight: 700 !important;
+      color: #000000 !important;
+    }
+
+    blockquote.scroll-quote footer {
+      text-align: right !important;
+      font-weight: 700 !important;
+      margin-top: 3px !important;
+      font-style: normal !important;
+    }
+
+    .page-number {
+      position: absolute !important;
+      bottom: 2% !important;
+      font-size: 0.8rem !important;
+      font-weight: 700 !important;
+      color: #000000 !important;
+      z-index: 25 !important;
+    }
+
+    .page-left .page-number { left: 26% !important; }
+    .page-right .page-number { right: 26% !important; }
+
+    /* SUMÁRIO COM DOTS */
+    .toc-list {
+      list-style: none !important;
+      width: 100% !important;
+      margin-top: 3% !important;
+    }
+
+    .toc-item {
+      display: flex !important;
+      align-items: baseline !important;
+      font-size: clamp(0.75rem, 0.88vw, 0.94rem) !important;
+      font-weight: 700 !important;
+      margin-bottom: 0.7em !important;
+      color: #000000 !important;
+    }
+
+    .toc-title-text {
+      white-space: nowrap !important;
+      padding-right: 4px !important;
+    }
+
+    .toc-dots {
+      flex-grow: 1 !important;
+      border-bottom: 2px dotted rgba(0, 0, 0, 0.6) !important;
+      margin: 0 4px !important;
+    }
+
+    .toc-page-num {
+      padding-left: 4px !important;
+      font-style: italic !important;
+    }
+
+    /* FOLHEAR 3D */
+    .page-flipper {
+      position: absolute !important;
+      top: 0 !important;
+      width: 50% !important;
+      height: 100% !important;
+      transform-style: preserve-3d !important;
+      display: none;
+      z-index: 50 !important;
+      pointer-events: none;
+      will-change: transform;
+      transition: transform 0.85s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+
+    .page-flipper.flip-next {
+      right: 0 !important;
+      transform-origin: left center !important;
+      transform: rotateY(0deg);
+    }
+
+    .page-flipper.flip-next.flipped {
+      transform: rotateY(-180deg) !important;
+    }
+
+    .page-flipper.flip-prev {
+      left: 0 !important;
+      transform-origin: right center !important;
+      transform: rotateY(0deg);
+    }
+
+    .page-flipper.flip-prev.flipped {
+      transform: rotateY(180deg) !important;
+    }
+
+    .flipper-face {
+      position: absolute !important;
+      width: 100% !important; height: 100% !important;
+      top: 0 !important; left: 0 !important;
+      backface-visibility: hidden !important;
+      -webkit-backface-visibility: hidden !important;
+      overflow: hidden !important;
+      background: url('assets/paper.png') center/cover no-repeat !important;
+    }
+
+    .flipper-face::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(to right, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%) !important;
+      pointer-events: none;
+    }
+
+    .flipper-back { transform: rotateY(180deg) !important; }
+
+    .turn-trigger {
+      position: absolute !important;
+      top: 0 !important; width: 45% !important; height: 100% !important;
+      z-index: 60 !important;
+      cursor: pointer !important;
+    }
+
+    .trigger-prev { left: 0 !important; }
+    .trigger-next { right: 0 !important; }
+
+    .book-end-container {
+      position: relative !important;
+      width: min(420px, 38vw) !important;
+      max-height: 82vh !important;
+      filter: drop-shadow(15px 25px 25px rgba(0, 0, 0, 0.9)) !important;
+      transition: transform 3s ease, filter 3s ease !important;
+    }
+
+    .book-end-image { width: 100% !important; height: auto !important; display: block !important; }
+
+    .book-end-container.zoom-out {
+      transform: scale(0.92) !important;
+      filter: drop-shadow(5px 10px 15px rgba(0, 0, 0, 0.95)) brightness(0.4) !important;
+    }
+
+    .final-text-content {
+      color: #e6d3b7 !important;
+      text-align: center !important;
+      font-size: clamp(1.2rem, 2vw, 1.8rem) !important;
+      font-style: italic !important;
+      line-height: 1.8 !important;
+      max-width: 800px !important;
+      padding: 0 20px !important;
+      opacity: 0 !important;
+      transition: opacity 2.5s ease-in-out !important;
+    }
+
+    .final-text-content.fade-in { opacity: 1 !important; }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-lighting"></div>
+
+  <div id="scene-desk" class="scene active">
+    <div class="table-background"></div>
+    <div class="book-cover-container" id="book-cover">
+      <img src="assets/cover.png" alt="Capa do Manuscrito" class="cover-image">
+    </div>
+  </div>
+
+  <div id="scene-reading" class="scene">
+    <div class="open-book-wrapper" id="open-book-container">
+      
+      <img src="assets/book-open.png" alt="Livro Aberto" class="book-open-bg">
+
+      <div class="book-viewport">
+        <div class="page-side page-left" id="page-left">
+          <div class="page-inner" id="content-left"></div>
+        </div>
+
+        <div class="page-side page-right" id="page-right">
+          <div class="page-inner" id="content-right"></div>
+        </div>
+
+        <div class="page-flipper" id="page-flipper">
+          <div class="flipper-face flipper-front" id="flipper-front"></div>
+          <div class="flipper-face flipper-back" id="flipper-back"></div>
+        </div>
+      </div>
+
+      <div class="turn-trigger trigger-prev" id="trigger-prev"></div>
+      <div class="turn-trigger trigger-next" id="trigger-next"></div>
+
+    </div>
+  </div>
+
+  <div id="scene-ending" class="scene">
+    <div class="table-background"></div>
+    <div class="book-end-container" id="book-end-container">
+      <img src="assets/book-end.png" alt="Livro Fechado" class="book-end-image">
+    </div>
+  </div>
+
+  <div id="scene-epilogue-text" class="scene">
+    <div class="final-text-content" id="final-quote">
+      <p>Algumas histórias terminam.</p>
+      <p>Outras apenas encontram quem estava destinado a lê-las.</p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      const bookSpreadData = [
+        {
+          left: { type: 'empty' },
+          right: {
+            type: 'title-page',
+            title: 'A Guardiã da Pequena Chama',
+            subtitle: 'Uma história sobre coragem,\nescolhas\ne o amor que transforma destinos.',
+            dedication: 'Escrito para Carol e Théo.',
+            year: 'Ano MMXXVI'
+          }
+        },
+        {
+          left: {
+            type: 'toc-left',
+            items: [
+              { title: 'Prólogo: A Lenda da Chama', page: '1' },
+              { title: 'Capítulo I: A Tribo da Chama', page: '3' },
+              { title: 'Capítulo II: O Viajante', page: '7' },
+              { title: 'Capítulo III: A Guardiã', page: '11' }
+            ]
+          },
+          right: {
+            type: 'toc-right',
+            items: [
+              { title: 'Capítulo IV: Duas Culturas', page: '17' },
+              { title: 'Capítulo V: O Sol', page: '23' },
+              { title: 'Epílogo: Carta à Chama', page: '29' }
+            ]
+          }
+        },
+        {
+          left: { type: 'image', src: 'assets/intro.png' },
+          right: {
+            type: 'text',
+            chapterTitle: 'Prólogo',
+            content: [
+              'Nas dobras do tempo, quando as estrelas ainda sussurravam segredos aos homens, nasceu a memória de uma chama que recusou apagar-se.',
+              'Esta não é apenas uma lenda contada ao redor das fogueiras, mas o registro sagrado daqueles que aprenderam que o maior ato de bravura não é conquistar terras, mas permanecer e proteger o amor que nos foi confiado.'
+            ]
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo I — A Tribo da Chama',
+            content: [
+              'Muito antes de os homens dividirem o mundo em reinos, existia uma pequena tribo escondida entre montanhas e florestas, conhecida como A Tribo da Chama.',
+              'Seu povo acreditava que toda vida nascia de uma pequena centelha invisível, um presente deixado pelos antigos para lembrar que a luz sempre vence a escuridão quando encontra alguém disposto a protegê-la.',
+              'Naquela tribo, as crianças aprendiam desde cedo que existiam dois títulos mais importantes do que qualquer outro.',
+              'O primeiro era o de Guardiã da Chama. O segundo era o de Guardião da Guardiã.',
+              'Ser escolhida como Guardiã era a maior honra que uma mulher poderia receber. Não era um prêmio. Era uma missão.'
+            ]
+          },
+          right: { type: 'image', src: 'assets/cap1.png' }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo I (Continuação)',
+            content: [
+              'Ela receberia uma pequena chama em suas mãos e dedicaria sua vida a alimentá-la. Não bastava impedir que ela se apagasse. Era preciso ensinar aquela chama a crescer. Alimentá-la com paciência. Aquecê-la com amor. Protegê-la até que um dia ela fosse capaz de produzir sua própria luz.',
+              'Mas nenhuma Guardiã caminhava sozinha. Ao seu lado existia um Guardião. Enquanto ela cuidava da chama... Ele cuidava dela. Enquanto ela alimentava a luz... Ele construía abrigo contra as tempestades.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo I',
+            content: [
+              'Porque os antigos diziam que proteger uma chama era importante. Mas proteger quem passava noites acordada cuidando dela era igualmente sagrado.',
+              'Por isso nunca existia um sem o outro. Os dois não dividiam tarefas. Dividiam propósitos.'
+            ],
+            quote: '“Uma chama precisa de calor para crescer. Mas quem oferece esse calor também precisa de um lugar seguro para descansar.”',
+            quoteAuthor: 'Dos Pergaminhos da Tribo'
+          }
+        },
+        {
+          left: { type: 'image', src: 'assets/cap2.png' },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo II — O Povo dos Caminhantes',
+            content: [
+              'Muito além das montanhas existia outro povo. Eles eram conhecidos como os Caminhantes do Norte. Sua cultura era completamente diferente.',
+              'Enquanto a Tribo da Chama acreditava que criar raízes era o sentido da vida, os Caminhantes acreditavam que permanecer era uma fraqueza.',
+              'Desde crianças aprendiam que um homem deveria conhecer o mundo inteiro. Não deveria criar laços profundos. Não deveria permanecer tempo demais em um único lugar. A coragem, para eles, era partir.'
+            ]
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo II (Continuação)',
+            content: [
+              'Foi entre esse povo que nasceu um jovem viajante. Ele cresceu observando o céu, estudando mapas e aprendendo que sempre existia um novo caminho esperando por ele.',
+              'Durante uma de suas jornadas, encontrou uma jovem da Tribo da Chama. Ela ainda não era Guardiã. Era apenas uma garota que enxergava aventura em cada novo amanhecer.',
+              'Enquanto ele media distâncias... Ela colecionava momentos. Enquanto ele imaginava consequências... Ela sorria para possibilidades.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo II',
+            content: [
+              'Eles caminharam juntos por pouco tempo. Tempo suficiente para perceberem que eram completamente diferentes. Tempo suficiente para jamais esquecerem um ao outro.',
+              'Mas cada um voltou para sua própria cultura. Ele continuou viajando. Ela continuou vivendo. E ambos acreditaram que aquela história havia terminado antes mesmo de realmente começar.'
+            ],
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo III — A Escolha da Guardiã',
+            content: [
+              'As estações mudaram. Os rios seguiram seu curso. E o destino escreveu capítulos que ninguém havia previsto.',
+              'A jovem foi escolhida para receber uma pequena chama. Naquele instante deixou de ser apenas uma habitante da aldeia. Tornou-se uma Guardiã.',
+              'Nos primeiros dias, a chama parecia pequena demais. Tão delicada que qualquer vento poderia apagá-la. Ela aprendeu que cuidar de uma chama não exigia força. Exigia presença.'
+            ]
+          },
+          right: { type: 'image', src: 'assets/cap3.png' }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo III (Continuação)',
+            content: [
+              'As noites tornaram-se mais curtas. Os dias pareciam longos. Muitas vezes o cansaço fazia seus braços pesarem. Mesmo assim, todas as manhãs ela voltava a alimentar aquela pequena luz.',
+              'Pouco a pouco, a chama começou a responder. Ela crescia. Brilhava um pouco mais. Aquecia um pouco mais.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo III',
+            content: [
+              'E, sem perceber, a Guardiã também mudava. A jovem aventureira continuava existindo. Mas agora havia descoberto uma coragem muito maior do que explorar o desconhecido. A coragem de colocar outra vida antes da própria.',
+              'Os anciãos observavam em silêncio. Porque sabiam que aquele era o momento em que uma mulher deixava de apenas carregar uma chama... e passava a carregar um futuro inteiro.'
+            ],
+          }
+        },
+        {
+          left: { type: 'image', src: 'assets/cap4.png' },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo IV — O Guardião Que Escolheu Permanecer',
+            content: [
+              'Foi então que, muitos ciclos depois, o viajante retornou. Ao chegar à aldeia, procurou pela garota que um dia conhecera. Encontrou uma mulher. Encontrou uma Guardiã. E encontrou uma pequena chama repousando em seus braços.',
+              'Naquele instante sentiu medo. Não do fogo. Mas do tempo. Pensou que havia chegado tarde demais. Que aquela história já estava completa. Que seu lugar era continuar caminhando.'
+            ]
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo IV (Continuação)',
+            content: [
+              'Percebendo seu silêncio, o mais velho da tribo aproximou-se.',
+              '— O que inquieta seu coração? — perguntou.',
+              '— Acho que cheguei depois que tudo aconteceu.',
+              'O ancião sorriu.',
+              '— Diga-me... quem você acredita que seja um Guardião?',
+              '— Aquele que ajuda a acender uma chama.',
+              'O velho balançou a cabeça.',
+              '— Não. Quem acende uma chama oferece um começo. Mas um Guardião é aquele que permanece durante todos os dias seguintes. É aquele que protege a Guardiã quando ela está cansada. É aquele que escolhe ficar quando partir seria mais fácil.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo IV',
+            content: [
+              'Naquela noite, o viajante olhou para as próprias botas. Elas carregavam a poeira de centenas de caminhos. Mas, pela primeira vez, ele não desejou seguir viagem.',
+              'Descobriu que sua antiga cultura lhe ensinara a atravessar o mundo. Aquela mulher lhe ensinava algo infinitamente mais difícil. Construir um lar.'
+            ],
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo V — O Sol que Nasceu de uma Pequena Chama',
+            content: [
+              'O viajante permaneceu.',
+              'No começo, estranhou a rotina da aldeia. As noites sem descanso. Os ventos inesperados. Os dias em que parecia que alimentar uma chama consumia mais forças do que qualquer batalha.',
+              'Foi então que ele compreendeu por que os antigos diziam que proteger uma chama exigia mais coragem do que empunhar uma espada. Ali não existiam vitórias rápidas. Existiam milhares de pequenas escolhas feitas todos os dias.'
+            ]
+          },
+          right: { type: 'image', src: 'assets/cap5.png' }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo V (Continuação)',
+            content: [
+              'Enquanto a Guardiã alimentava a chama com paciência, ternura e sabedoria... O Guardião aprendia a proteger não apenas o fogo, mas também quem dedicava a própria vida para mantê-lo aceso.',
+              'E, sem que percebessem, os anos passaram. A pequena chama cresceu. Primeiro iluminou a cabana. Depois iluminou o caminho diante dela. Logo sua luz alcançava toda a aldeia.',
+              'Até que, certa manhã, os anciãos perceberam algo que jamais havia acontecido. A chama já não precisava ser protegida. Ela havia se tornado um Sol.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo V',
+            content: [
+              'Não um sol que brilhava no céu. Mas um sol que vivia dentro dela. Sua luz era suficiente para aquecer quem tinha frio. Guiar quem havia se perdido. E reacender a esperança daqueles que acreditavam que suas próprias chamas haviam se apagado.',
+              'Eles então escreveram nos antigos pergaminhos:',
+              'E, desde aquele dia, toda criança da aldeia passou a aprender que existem três formas de grandeza. A primeira é nascer. A segunda é aprender a amar. Mas a terceira... A mais rara de todas... É crescer cercado por pessoas que escolheram permanecer.',
+              
+            ]
+          }
+        },
+        {
+          left: { type: 'image', src: 'assets/final.png' },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo VI — Ao Guardião do Sol',
+            content: [
+              'Théo, minha pequena chama,',
+              'Se você está lendo estas palavras, significa que a história chegou muito mais longe do que eu consigo enxergar hoje.',
+              'Enquanto escrevo este capítulo, é 09 de agosto de 2026. É o seu primeiro Dia dos Pais. Você ainda é pequeno demais para entender o significado desta história, mas espero que, quando abrir estas páginas novamente, ela faça sentido para o seu coração.',
+              'Encontrei na lenda da Tribo da Chama a forma mais bonita que conheci para contar a história da nossa família.',
+              'Mas existe uma parte que não está escrita nos capítulos anteriores. Ela começa comigo.'
+            ]
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo VI (Carta)',
+            content: [
+              'Quando conheci sua mãe, ela ainda não era uma Guardiã. Eu me encantei pela pessoa que ela era: uma mulher que vivia com coragem, que encontrava alegria nas coisas mais simples e que fazia o mundo parecer um lugar maior do que ele realmente era.',
+              'Nossos caminhos seguiram direções diferentes por um tempo. Achei que aquele capítulo havia terminado.',
+              'A vida, porém, escreveu diferente.',
+              'Quando nossos caminhos voltaram a se encontrar, você já era uma pequena chama prestes a iluminar o mundo.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo VI (Carta)',
+            content: [
+              'Confesso que senti medo. Não medo de você. Nem da sua mãe. Tive medo de não ser suficiente. Medo de chegar tarde. Medo de não encontrar um lugar em uma história que já parecia tão importante.',
+              'Mas foi convivendo com sua mãe que entendi uma das maiores lições da minha vida. Ela nunca precisou que alguém a salvasse. Ela precisava apenas de alguém disposto a caminhar ao lado dela.',
+              'Até hoje, o viajante ainda está aprendendo a viver como um Guardião. Ele ainda se cobra. Ainda erra. Ainda tenta descobrir todos os dias como proteger melhor sua Guardiã e sua Pequena Chama.'
+            ]
+          }
+        },
+        {
+          left: {
+            type: 'text',
+            chapterTitle: 'Capítulo VI (Carta)',
+            content: [
+              'Mas existe uma coisa da antiga cultura dos Caminhantes que ele nunca abandonou: Ela ensinava que, quando encontramos aquilo que realmente amamos, desistir deixa de ser uma opção.',
+              'Foi por isso que ele permaneceu. Porque encontrou um lar. Encontrou um abrigo. Encontrou uma mulher cuja força o inspirou a se tornar alguém melhor. E encontrou uma pequena chama que deu um novo significado à palavra "futuro".',
+              'Se um dia você se perguntar o que é uma família, espero que não pense apenas em sangue, nomes ou sobrenomes. Espero que pense em pessoas que escolhem permanecer. Pessoas que escolhem cuidar. Pessoas que escolhem amar.'
+            ]
+          },
+          right: {
+            type: 'text',
+            chapterTitle: 'Capítulo VI (Carta)',
+            content: [
+              'Você nasceu de duas histórias completamente diferentes. De duas culturas opostas. Uma ensinou a proteger a chama. A outra ensinou que nunca se deve desistir do caminho quando ele vale a pena.',
+              'Quando essas duas culturas se encontraram, descobriram que nenhuma estava completa sozinha. E foi desse encontro que nasceu a nossa família.',
+              'Agora, a história pertence a você.',
+              'Cresça, minha pequena chama. Aqueça quem sentir frio. Ilumine quem caminhar na escuridão. Proteja aqueles que você ama.',
+              'E, quando chegar a sua vez de cuidar de uma nova chama, lembre-se de que toda grande luz começou pequena. Mas nunca permaneceu pequena porque existiram pessoas que escolheram alimentá-la todos os dias.',
+              'Torne-se o Sol.',
+              'Com amor,\nO seu Guardião.'
+            ]
+          }
+        }
+      ];
+
+      let currentSpreadIndex = 0;
+      let isAnimating = false;
+
+      const sceneDesk = document.getElementById('scene-desk');
+      const sceneReading = document.getElementById('scene-reading');
+      const sceneEnding = document.getElementById('scene-ending');
+      const sceneEpilogue = document.getElementById('scene-epilogue-text');
+
+      const bookCover = document.getElementById('book-cover');
+      const openBookContainer = document.getElementById('open-book-container');
+      
+      const contentLeft = document.getElementById('content-left');
+      const contentRight = document.getElementById('content-right');
+      
+      const triggerPrev = document.getElementById('trigger-prev');
+      const triggerNext = document.getElementById('trigger-next');
+
+      const flipper = document.getElementById('page-flipper');
+      const flipperFront = document.getElementById('flipper-front');
+      const flipperBack = document.getElementById('flipper-back');
+
+      function renderPageData(container, pageData, pageNum) {
+        container.innerHTML = '';
+        if (!pageData || pageData.type === 'empty') return;
+
+        if (pageData.type === 'image') {
+          const img = document.createElement('img');
+          img.src = pageData.src;
+          img.className = 'full-page-illustration';
+          container.appendChild(img);
+        } 
+        else {
+          const border = document.createElement('div');
+          border.className = 'page-border-frame';
+          container.appendChild(border);
+
+          const box = document.createElement('div');
+
+          // ROTEAMENTO DINÂMICO DE CAIXAS CSS INDEPENDENTES
+          if (container.id === 'content-left' || container.parentElement.classList.contains('page-left')) {
+            box.className = 'box-pagina-esquerda';
+          } else {
+            box.className = 'box-pagina-direita';
+          }
+
+          if (pageData.type === 'title-page') {
+            const title = document.createElement('h1');
+            title.className = 'book-title';
+            title.innerText = pageData.title;
+
+            const subtitle = document.createElement('p');
+            subtitle.className = 'subtitle';
+            subtitle.innerText = pageData.subtitle;
+
+            const dedication = document.createElement('p');
+            dedication.className = 'dedication';
+            dedication.innerText = pageData.dedication;
+
+            const year = document.createElement('p');
+            year.className = 'year';
+            year.innerText = pageData.year;
+
+            box.appendChild(title);
+            box.appendChild(subtitle);
+            box.appendChild(dedication);
+            box.appendChild(year);
+          } 
+          else if (pageData.type === 'toc-left' || pageData.type === 'toc-right') {
+            const tocTitle = document.createElement('h2');
+            tocTitle.className = 'chapter-title';
+            tocTitle.innerText = pageData.type === 'toc-left' ? 'SUMÁRIO' : '';
+            box.appendChild(tocTitle);
+
+            const ul = document.createElement('ul');
+            ul.className = 'toc-list';
+            pageData.items.forEach(item => {
+              const li = document.createElement('li');
+              li.className = 'toc-item';
+              li.innerHTML = `<span class="toc-title-text">${item.title}</span><span class="toc-dots"></span><span class="toc-page-num">${item.page}</span>`;
+              ul.appendChild(li);
+            });
+            box.appendChild(ul);
+          } 
+          else if (pageData.type === 'text') {
+            if (pageData.chapterTitle) {
+              const h2 = document.createElement('h2');
+              h2.className = 'chapter-title';
+              h2.innerText = pageData.chapterTitle;
+              box.appendChild(h2);
+            }
+
+            pageData.content.forEach((paragraphText, idx) => {
+              const p = document.createElement('p');
+              p.className = 'text-paragraph';
+
+              if (idx === 0) {
+                const firstLetter = paragraphText.charAt(0);
+                const restOfText = paragraphText.slice(1);
+                p.innerHTML = `<span class="drop-cap">${firstLetter}</span>${restOfText}`;
+              } else {
+                p.innerText = paragraphText;
+              }
+              box.appendChild(p);
+            });
+
+            if (pageData.quote) {
+              const quote = document.createElement('blockquote');
+              quote.className = 'scroll-quote';
+              quote.innerHTML = `${pageData.quote}<footer>— ${pageData.quoteAuthor}</footer>`;
+              box.appendChild(quote);
+            }
+          }
+
+          container.appendChild(box);
+        }
+
+        if (pageNum > 0) {
+          const numElem = document.createElement('div');
+          numElem.className = 'page-number';
+          numElem.innerText = pageNum;
+          container.appendChild(numElem);
+        }
+      }
+
+      function updateCurrentSpread() {
+        const data = bookSpreadData[currentSpreadIndex];
+        const pageLeftNum = currentSpreadIndex * 2;
+        const pageRightNum = currentSpreadIndex * 2 + 1;
+
+        renderPageData(contentLeft, data.left, pageLeftNum);
+        renderPageData(contentRight, data.right, pageRightNum);
+      }
+
+      bookCover.addEventListener('click', () => {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        bookCover.classList.add('opening');
+
+        setTimeout(() => {
+          sceneDesk.classList.remove('active');
+          sceneReading.classList.add('active');
+          updateCurrentSpread();
+          isAnimating = false;
+        }, 1100);
+      });
+
+      function turnPage(direction) {
+        if (isAnimating) return;
+
+        if (direction === 'next') {
+          if (currentSpreadIndex < bookSpreadData.length - 1) {
+            isAnimating = true;
+
+            renderPageData(flipperFront, bookSpreadData[currentSpreadIndex].right, currentSpreadIndex * 2 + 1);
+            renderPageData(flipperBack, bookSpreadData[currentSpreadIndex + 1].left, (currentSpreadIndex + 1) * 2);
+
+            flipper.style.display = 'block';
+            flipper.className = 'page-flipper flip-next';
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                flipper.classList.add('flipped');
+              });
+            });
+
+            setTimeout(() => {
+              currentSpreadIndex++;
+              updateCurrentSpread();
+              flipper.style.display = 'none';
+              flipper.className = 'page-flipper';
+              isAnimating = false;
+            }, 850);
+
+          } else {
+            closeBookSequence();
+          }
+        } else if (direction === 'prev') {
+          if (currentSpreadIndex > 0) {
+            isAnimating = true;
+
+            renderPageData(flipperFront, bookSpreadData[currentSpreadIndex].left, currentSpreadIndex * 2);
+            renderPageData(flipperBack, bookSpreadData[currentSpreadIndex - 1].right, (currentSpreadIndex - 1) * 2 + 1);
+
+            flipper.style.display = 'block';
+            flipper.className = 'page-flipper flip-prev';
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                flipper.classList.add('flipped');
+              });
+            });
+
+            setTimeout(() => {
+              currentSpreadIndex--;
+              updateCurrentSpread();
+              flipper.style.display = 'none';
+              flipper.className = 'page-flipper';
+              isAnimating = false;
+            }, 850);
+          }
+        }
+      }
+
+      triggerNext.addEventListener('click', () => turnPage('next'));
+      triggerPrev.addEventListener('click', () => turnPage('prev'));
+
+      function closeBookSequence() {
+        isAnimating = true;
+
+        sceneReading.classList.remove('active');
+        sceneEnding.classList.add('active');
+
+        const endContainer = document.getElementById('book-end-container');
+
+        setTimeout(() => {
+          endContainer.classList.add('zoom-out');
+        }, 500);
+
+        setTimeout(() => {
+          sceneEnding.classList.remove('active');
+          sceneEpilogue.classList.add('active');
+
+          setTimeout(() => {
+            document.getElementById('final-quote').classList.add('fade-in');
+          }, 300);
+
+        }, 3800);
+      }
+
+    });
+  </script>
+</body>
+</html>
